@@ -1,83 +1,63 @@
-/**
- * LoginPage.jsx - Página de inicio de sesión
- *
- * ¿Qué hace?
- * - Permite a usuarios registrados acceder a la aplicación
- * - Valida las credenciales del usuario contra localStorage
- * - Redirige al dashboard después del login exitoso
- *
- * ¿Cómo funciona?
- * - Compara el email y contraseña ingresados con los usuarios almacenados
- * - Si las credenciales coinciden: llama a onLogin y navega al dashboard
- * - Si no coinciden: muestra un mensaje de error
- *
- * Props:
- * - onLogin: Función que actualiza el estado de autenticación en App.jsx
- */
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import PropTypes from "prop-types";
 import logo from "@/assets/logo.png";
+import { useAuth } from "../context/AuthContext";
+import { loginUser } from "../services/apiService";
 
-export default function LoginPage({ onLogin }) {
-  // Estados para almacenar los valores del formulario
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate(); // Hook para navegación programática
-  const { toast } = useToast(); // Hook para mostrar notificaciones
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  /**
-   * handleSubmit - Maneja el envío del formulario de login
-   * ¿Qué hace?
-   * - Previene el comportamiento por defecto del formulario
-   * - Busca el usuario en localStorage
-   * - Valida las credenciales
-   * - Muestra mensajes de éxito o error
-   */
+  const { handleLogin } = useAuth();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
     try {
-      const response = await fetch("http://localhost:3001/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `Login failed with status: ${response.status}`
-        );
-      }
-      const user = response.json();
-      console.log("HI", user);
-      if (user) {
-        onLogin(user);
+      const credentials = { email, password };
+
+      const responseData = await loginUser(credentials);
+      if (responseData.ok && responseData.data.user) {
+        handleLogin(responseData.data.user);
+
         toast({
           title: "¡Bienvenido!",
-          description: "Has iniciado sesión correctamente",
+          description: "Has iniciado sesión correctamente.",
         });
+
         navigate("/dashboard");
       } else {
-        toast({
-          title: "Error",
-          description: "Credenciales incorrectas",
-          variant: "destructive",
-        });
+        throw new Error(responseData.msg || "Respuesta de login inesperada.");
       }
     } catch (error) {
-      console.error("Error al logear,", error);
+      console.error("Error al iniciar sesión:", error.message);
+
+      let errorMessage = "Ocurrió un error inesperado al iniciar sesión.";
+
+      if (error.message.includes("Credenciales invalidas") || error.message.includes("credenciales incorrectas")) {
+        errorMessage = "Credenciales incorrectas. Verifica tu email y contraseña.";
+      } else if (error.message.includes("La institucion esta en proceso de validacion")) {
+        errorMessage = "Tu institución está pendiente de validación. Serás notificado cuando sea aprobada.";
+      } else if (error.message.includes("Cuenta no verificada")) {
+        errorMessage = "Cuenta no verificada. Por favor verifica tu correo.";
+      }
+
+      toast({
+        title: "Error de Autenticación",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -89,18 +69,10 @@ export default function LoginPage({ onLogin }) {
       <Card className="w-full max-w-md relative z-10">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 w-24 h-24 bg-background rounded-full flex items-center justify-center">
-            <img
-              src={logo}
-              alt="Marca  HemoApp"
-              className="w-16 h-auto object-contain"
-            />
+            <img src={logo} alt="Marca HemoApp" className="w-16 h-auto object-contain" />
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">
-            Iniciar Sesión
-          </CardTitle>
-          <CardDescription className="text-lg font-semibold">
-            Ingresa a tu cuenta de HemoApp
-          </CardDescription>
+          <CardTitle className="text-3xl font-bold text-primary">Iniciar Sesión</CardTitle>
+          <CardDescription className="text-lg font-semibold">Ingresa a tu cuenta de HemoApp</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -113,6 +85,7 @@ export default function LoginPage({ onLogin }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isSubmitting}
               />
             </div>
             <div className="space-y-2">
@@ -124,27 +97,20 @@ export default function LoginPage({ onLogin }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isSubmitting}
               />
             </div>
-            <Button type="submit" className="w-full" size="lg">
-              Entrar
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? "Iniciando..." : "Entrar"}
             </Button>
             <div className="text-center">
-              <Link
-                to="#"
-                className="text-base text-muted-foreground hover:text-primary"
-              >
+              <Link to="#" className="text-base text-muted-foreground hover:text-primary">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
             <div className="text-center pt-4 border-t">
-              <span className="text-base text-muted-foreground">
-                ¿No tienes cuenta?{" "}
-              </span>
-              <Link
-                to="/register"
-                className="text-base text-primary font-semibold hover:underline"
-              >
+              <span className="text-base text-muted-foreground">¿No tienes cuenta? </span>
+              <Link to="/register" className="text-base text-primary font-semibold hover:underline">
                 Regístrate aquí
               </Link>
             </div>
@@ -154,7 +120,3 @@ export default function LoginPage({ onLogin }) {
     </div>
   );
 }
-
-LoginPage.propTypes = {
-  onLogin: PropTypes.func.isRequired,
-};

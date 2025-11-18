@@ -1,9 +1,5 @@
 import { userModel } from "../models/user.model.js";
-import {
-  generateToken,
-  verifyToken,
-  generateTokenRefresh,
-} from "../helpers/jwt.helper.js";
+import { generateToken, verifyToken, generateTokenRefresh } from "../helpers/jwt.helper.js";
 import { comparePasswords } from "../helpers/bcrypt.helper.js";
 import { RegistrationService } from "../services/registration.service.js";
 import { envs } from "../config/config.env.js";
@@ -12,8 +8,7 @@ import { envs } from "../config/config.env.js";
 
 export const register = async (req, res) => {
   try {
-    const { userName, email, password, role, profileData, institutionData } =
-      req.body;
+    const { userName, email, password, role, profileData, institutionData } = req.body;
     const result = await RegistrationService.registerUser({
       userName,
       email,
@@ -99,7 +94,12 @@ export const login = async (req, res) => {
     user.loginCount += 1;
     user.Token = accessToken;
     await user.save();
-
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+      maxAge: 3600000,
+    });
     return res.status(200).json({
       ok: true,
       msg: "Logueado correctamente, bienvenido!",
@@ -125,10 +125,8 @@ export const login = async (req, res) => {
 };
 export const getMyProfile = async (req, res) => {
   try {
-    const userId = req.user._id; //viene la info del token
-    const myProfile = await userModel
-      .findById(userId)
-      .select("-password -Token");
+    const userId = req.user._id;
+    const myProfile = await userModel.findById(userId).select("-password -Token");
     res.status(200).json({
       ok: true,
       data: myProfile,
@@ -162,7 +160,6 @@ export const logout = async (req, res) => {
     });
   }
 };
-// export const refreshToken = async(req, res)=>{
 //     try {
 //         const user = req.user;
 //         const newAccesToken = generateToken(user);
@@ -211,8 +208,7 @@ export const verifyEmail = async (req, res) => {
 
     // Si la petición viene de un navegador (acepta HTML), redirigimos al frontend
     const successUrl = `${envs.FRONTEND_URL}/onboarding`;
-    const wantsHtml =
-      req.headers.accept && req.headers.accept.includes("text/html");
+    const wantsHtml = req.headers.accept && req.headers.accept.includes("text/html");
 
     if (wantsHtml) {
       // Generar refresh token y setearlo en cookie HttpOnly (opcional rotación)

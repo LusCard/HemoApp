@@ -1,10 +1,4 @@
-import { useState, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -15,133 +9,117 @@ import ProfilePage from "./pages/ProfilePage";
 import DonorStatusPage from "./pages/DonorStatusPage";
 import RequestBloodPage from "./pages/RequestBloodPage";
 import { Toaster } from "./components/ui/toaster";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+
+// Componente auxiliar para proteger rutas de forma más limpia
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return null; // O un spinner pequeño
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/solicitar-sangre" element={<RequestBloodPage />} />
+
+      {/* Rutas solo para NO autenticados (si ya estás logueado, te manda al dashboard) */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <RegisterPage />
+          </PublicRoute>
+        }
+      />
+
+      {/* Rutas Protegidas */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/solicitudes"
+        element={
+          <ProtectedRoute>
+            <BloodRequestsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mapa"
+        element={
+          <ProtectedRoute>
+            <MapPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/estado-donador"
+        element={
+          <ProtectedRoute>
+            <DonorStatusPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Ruta por defecto para 404 */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
 export default function App() {
-  // Estado para controlar si el usuario está autenticado
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // Estado que almacena los datos del usuario actual
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // Intenta recuperar los datos del usuario almacenados localmente
-    const storedUser = localStorage.getItem("hemoapp_user");
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-    setIsAuthenticated(true);
-    localStorage.setItem("hemoapp_user", JSON.stringify(userData));
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem("hemoapp_user");
-  };
-
-  const handleUpdateUser = (updatedUserData) => {
-    setUser(updatedUserData);
-    localStorage.setItem("hemoapp_user", JSON.stringify(updatedUserData));
-  };
-
   return (
     <Router>
-      <Routes>
-        {/* Rutas públicas: Accesibles por todos */}
-        <Route path="/" element={<LandingPage />} />
-        <Route
-          path="/login"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <LoginPage onLogin={handleLogin} />
-            )
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <RegisterPage onRegister={handleLogin} />
-            )
-          }
-        />
-        {/* Ruta pública para solicitar sangre (puede ser usada por no logueados o familiares) */}
-        <Route path="/solicitar-sangre" element={<RequestBloodPage />} />
-
-        {/* Rutas protegidas: Solo para usuarios autenticados */}
-        <Route
-          path="/dashboard"
-          element={
-            !isAuthenticated ? (
-              <DashboardPage
-                user={user}
-                onLogout={handleLogout}
-                onUpdateUser={handleUpdateUser}
-              />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/solicitudes"
-          element={
-            !isAuthenticated ? (
-              <BloodRequestsPage user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/mapa"
-          element={
-            !isAuthenticated ? (
-              <MapPage user={user} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/perfil"
-          element={
-            !isAuthenticated ? (
-              <ProfilePage
-                user={user}
-                onLogout={handleLogout}
-                onUpdateUser={handleUpdateUser}
-              /> // Usar handleUpdateUser aquí
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/estado-donador"
-          element={
-            !isAuthenticated ? (
-              <DonorStatusPage
-                user={user}
-                onLogout={handleLogout}
-                onUpdateUser={handleUpdateUser}
-              />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-      </Routes>
-      <Toaster />
+      <AuthProvider>
+        <AppRoutes />
+        <Toaster />
+      </AuthProvider>
     </Router>
   );
 }

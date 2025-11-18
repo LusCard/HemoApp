@@ -1,38 +1,9 @@
-/**
- * Header.jsx - Componente de encabezado de la aplicación
- *
- * ¿Qué hace?
- * - Muestra la barra de navegación superior en todas las páginas autenticadas
- * - Proporciona enlaces rápidos al perfil y dashboard
- * - Permite cerrar sesión
- *
- * ¿Para qué sirve?
- * - Navegación consistente en toda la aplicación
- * - Acceso rápido a funciones principales
- * - Identificación visual de la marca HemoApp
- *
- * Props:
- * - user: Datos del usuario actual
- * - onLogout: Función para cerrar sesión
- */
-
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 
-export default function Header({ user, onLogout }) {
+export default function Header({ user }) {
   const navigate = useNavigate();
-
-  /**
-   * handleLogout - Maneja el cierre de sesión
-   * ¿Qué hace?
-   * - Llama a la función onLogout para limpiar el estado
-   * - Redirige al usuario a la página de inicio
-   */
-  const handleLogout = () => {
-    onLogout();
-    navigate("/");
-  };
 
   return (
     <header className="bg-primary py-4 px-6 shadow-lg">
@@ -45,10 +16,7 @@ export default function Header({ user, onLogout }) {
         </Link>
         <div className="flex items-center gap-4">
           <Link to="/perfil">
-            <Button
-              variant="outline"
-              className="text-primary-foreground border-primary-foreground hover:bg-primary-foreground hover:text-primary"
-            >
+            <Button variant="outline" className="text-primary border-primary-foreground hover:bg-primary-foreground hover:text-primary hover:border-ring">
               Mi Perfil
             </Button>
           </Link>

@@ -1,108 +1,64 @@
-/**
- * DashboardPage.jsx - Panel principal del donante autenticado
- *
- * ¿Qué hace?
- * - Muestra la página principal después del login
- * - Proporciona navegación a las 3 funciones principales de la app
- * - Da la bienvenida al usuario
- *
- * ¿Para qué sirve?
- * - Hub central de navegación para usuarios autenticados
- * - Acceso rápido a las funcionalidades principales
- * - Orientar al usuario sobre qué puede hacer en la app
- *
- * Funcionalidades principales:
- * 1. Donar: Ver solicitudes activas de sangre y responder
- * 2. Mapa: Encontrar centros de donación cercanos
- * 3. Estado como donador: Ver perfil, estadísticas e historial
- *
- * Props:
- * - user: Datos del usuario actual
- * - onLogout: Función para cerrar sesión
- */
-
 import { Link } from "react-router-dom";
-import Header from "@/components/Header";
-import logo from "@/assets/logo.png";
-import botonDonar from "@/assets/boton-donar.png";
-import botonMapa from "@/assets/boton-mapa.png";
-import botonEstado from "@/assets/boton-estado.png";
-import PropTypes from "prop-types";
+import Header from "../components/Header";
+import logo from "../assets/logo.png";
+import botonDonar from "../assets/boton-donar.png";
+import botonMapa from "../assets/boton-mapa.png";
+import botonEstado from "../assets/boton-estado.png";
+import { useAuth } from "../context/AuthContext";
+import InstitutionCarousel from "../components/Carroussel";
+import CallToActionBanners from "../components/Banners";
+import InformativeHeroes from "../components/Heroes";
 
-export default function DashboardPage({ user, onLogout }) {
+export default function DashboardPage() {
+  const { user } = useAuth();
+  console.log(user?.role);
+
   return (
     <div className="min-h-screen bg-background">
-      <Header user={user} onLogout={onLogout} />
+      <Header user={user} />
 
       <div className="container mx-auto py-12 px-6">
-        {/* Logo y bienvenida */}
         <div className="text-center mb-12">
-          <img
-            src={logo}
-            alt="HemoApp"
-            className="w-20 h-20 mx-auto mb-4 object-contain"
-          />
-          <h1 className="text-4xl font-bold text-accent mb-2">
-            ¿Qué quieres ver hoy?
-          </h1>
+          <img src={logo} alt="HemoApp" className="w-20 h-20 mx-auto mb-4 object-contain" />
+          <h1 className="text-4xl font-extrabold text-primary mb-2">Hola, {user?.profile?.firstName || user?.email || "Bienvenido"}!</h1>
+          <h2 className="text-4xl font-bold text-accent">¿Qué quieres ver hoy?</h2>
         </div>
 
-        {/* Action Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-16">
           <Link to="/solicitudes" className="group">
-            <div className="text-center transition-transform hover:scale-105">
+            <div className="text-center transition-transform hover:scale-105 rounded-xl p-4 bg-white shadow-lg">
               <div className="mb-4">
-                <img
-                  src={botonDonar}
-                  alt="Donar"
-                  className="w-48 h-48 mx-auto object-contain"
-                />
+                <img src={botonDonar} alt="Donar" className="w-48 h-48 mx-auto object-contain" />
               </div>
               <h3 className="text-2xl font-bold text-accent">Donar</h3>
+              <p className="text-sm text-gray-500">Encuentra solicitudes de sangre urgentes.</p>
             </div>
           </Link>
 
           <Link to="/mapa" className="group">
-            <div className="text-center transition-transform hover:scale-105">
+            <div className="text-center transition-transform hover:scale-105 rounded-xl p-4 bg-white shadow-lg">
               <div className="mb-4">
-                <img
-                  src={botonMapa}
-                  alt="Mapa"
-                  className="w-48 h-48 mx-auto object-contain"
-                />
+                <img src={botonMapa} alt="Mapa" className="w-48 h-48 mx-auto object-contain" />
               </div>
               <h3 className="text-2xl font-bold text-accent">Mapa</h3>
+              <p className="text-sm text-gray-500">Localiza bancos de sangre cercanos.</p>
             </div>
           </Link>
 
           <Link to="/estado-donador" className="group">
-            <div className="text-center transition-transform hover:scale-105">
+            <div className="text-center transition-transform hover:scale-105 rounded-xl p-4 bg-white shadow-lg">
               <div className="mb-4">
-                <img
-                  src={botonEstado}
-                  alt="Estado como donador"
-                  className="w-48 h-48 mx-auto object-contain"
-                />
+                <img src={botonEstado} alt="Estado como donador" className="w-48 h-48 mx-auto object-contain" />
               </div>
-              <h3 className="text-2xl font-bold text-accent">
-                Estado como donador
-              </h3>
+              <h3 className="text-2xl font-bold text-accent">Estado Donador</h3>
+              <p className="text-sm text-gray-500">Gestiona tu disponibilidad para donar.</p>
             </div>
           </Link>
         </div>
 
+        <CallToActionBanners />
+        <InformativeHeroes />
       </div>
-      <div className="space-y-6 mb-8">
-            <h2 className="text-3xl font-bold text-foreground">
-              Instituciones Destacadas
-            </h2>
-            <InstitutionsCarousel />
-          </div>
     </div>
   );
 }
-
-DashboardPage.propTypes = {
-  user: PropTypes.any,
-  onLogout: PropTypes.func.isRequired,
-};
